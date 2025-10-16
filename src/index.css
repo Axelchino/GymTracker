@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gray-600;
+  }
+
+  body {
+    @apply bg-gray-900 text-gray-50 antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  /* Custom scrollbar for OLED dark mode */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-900;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-700 rounded;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-600;
+  }
+
+  /* Remove default number input spinners */
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+}
+
+@layer components {
+  /* Custom button styles */
+  .btn-primary {
+    @apply bg-primary-blue hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-700 hover:bg-gray-600 text-gray-50 font-semibold py-3 px-6 rounded-xl transition-all duration-200;
+  }
+
+  .btn-outline {
+    @apply border-2 border-gray-600 text-gray-200 hover:bg-gray-700 hover:border-gray-500 font-semibold py-3 px-6 rounded-xl transition-all duration-200;
+  }
+
+  /* Custom input styles */
+  .input {
+    @apply bg-gray-800 border border-gray-600 text-gray-50 placeholder-gray-400 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent transition-all;
+  }
+
+  /* Custom card styles with improved contrast */
+  .card {
+    @apply bg-gray-800 rounded-2xl p-6 border border-gray-700;
+  }
+
+  .card-elevated {
+    @apply bg-gray-800 rounded-2xl p-6 border border-gray-600 shadow-2xl shadow-black/50;
+  }
+}
