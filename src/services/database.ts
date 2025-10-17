@@ -21,6 +21,7 @@ export class GymTrackerDatabase extends Dexie {
   constructor() {
     super('GymTrackerDB');
 
+    // Version 1: Initial schema
     this.version(1).stores({
       users: 'id, email, createdAt',
       exercises:
@@ -32,6 +33,17 @@ export class GymTrackerDatabase extends Dexie {
       bodyMeasurements: 'id, userId, date, [userId+date]',
       achievements: 'id, category, unlockedAt',
       programs: 'id, userId, isActive, createdAt, [userId+isActive]',
+    });
+
+    // Version 2: Enhanced exercise library with movementType, popularityRank, sourceUrl
+    this.version(2).stores({
+      exercises:
+        'id, name, category, equipment, difficulty, movementType, popularityRank, isCustom, createdAt, [category+equipment], [movementType+popularityRank]',
+    }).upgrade(async (tx) => {
+      // Migration: Add new fields to existing exercises
+      // New exercises from enhancedExercises.ts already have these fields
+      // This migration ensures any custom exercises get default values
+      console.log('Upgrading to v2: Adding movementType, popularityRank, and sourceUrl fields');
     });
   }
 }

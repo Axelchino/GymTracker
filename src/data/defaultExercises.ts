@@ -1,7 +1,14 @@
 import type { Exercise } from '../types/exercise';
+import { enhancedExercises } from './enhancedExercises';
 
-// Comprehensive exercise library - 180+ exercises
-export const defaultExercises: Omit<Exercise, 'id' | 'createdAt' | 'updatedAt'>[] = [
+// Enhanced exercise library - 1,146 exercises with AI-powered classification
+// Includes: movement types, popularity rankings, proper muscle classifications
+// Source: Scraped from FitnessProgramer.com and enhanced with context-aware muscle inference
+export const defaultExercises: Omit<Exercise, 'id' | 'createdAt' | 'updatedAt'>[] = enhancedExercises;
+
+// Legacy exercises (kept for reference, not exported)
+// These 191 exercises were the original library before enhancement
+const legacyExercises: Omit<Exercise, 'id' | 'createdAt' | 'updatedAt' | 'movementType' | 'popularityRank' | 'sourceUrl'>[] = [
   // ==================== CHEST ====================
   // Barbell Chest
   {

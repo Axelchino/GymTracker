@@ -12,7 +12,13 @@ export type MuscleGroup =
   | 'Glutes'
   | 'Calves'
   | 'Traps'
-  | 'Lats';
+  | 'Lats'
+  | 'Lower Back'
+  | 'Neck'
+  | 'Hip Flexors'
+  | 'Adductors'
+  | 'Full Body'
+  | 'Cardio';
 
 export type Equipment =
   | 'Barbell'
@@ -23,20 +29,28 @@ export type Equipment =
   | 'Resistance Band'
   | 'Kettlebell'
   | 'Smith Machine'
+  | 'Rope'
+  | 'Foam Roller'
+  | 'Stability Ball'
+  | 'Suspension'
   | 'Other';
 
 export type Difficulty = 'Beginner' | 'Intermediate' | 'Advanced';
+
+export type MovementType = 'compound' | 'isolation' | 'stretch' | 'cardio' | 'mobility';
 
 export type MuscleInvolvement = 'primary' | 'secondary';
 
 export interface Exercise {
   id: string;
   name: string;
-  category: MuscleGroup;
+  category: MuscleGroup | string; // Allow string for flexibility with scraped data
   equipment: Equipment;
   difficulty: Difficulty;
-  primaryMuscles: MuscleGroup[];
-  secondaryMuscles: MuscleGroup[];
+  movementType: MovementType;
+  popularityRank: number; // 1-100 scale
+  primaryMuscles: (MuscleGroup | string)[]; // Allow string for flexibility
+  secondaryMuscles: (MuscleGroup | string)[]; // Allow string for flexibility
   muscleMap: Record<string, MuscleInvolvement>;
   instructions: string;
   videoUrl?: string;
@@ -51,5 +65,8 @@ export interface ExerciseSearchParams {
   category?: MuscleGroup;
   equipment?: Equipment;
   difficulty?: Difficulty;
+  movementType?: MovementType;
   isCustom?: boolean;
+  sortBy?: 'name' | 'popularity' | 'difficulty';
+  sortOrder?: 'asc' | 'desc';
 }

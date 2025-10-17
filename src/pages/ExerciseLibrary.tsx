@@ -22,23 +22,117 @@ export function ExerciseLibrary() {
     loadExercises();
   }, []);
 
-  // Search and group exercises by primary vs secondary muscle matches
-  const searchLower = searchTerm.toLowerCase();
+  // Multi-keyword search - split search term into individual words
+  const searchKeywords = searchTerm.toLowerCase().trim().split(/\s+/).filter(Boolean);
 
   const searchResults = exercises.reduce((acc, ex) => {
-    const nameMatch = ex.name.toLowerCase().includes(searchLower);
-    const categoryMatch = ex.category.toLowerCase().includes(searchLower);
-    const primaryMatch = ex.primaryMuscles.some(m => m.toLowerCase().includes(searchLower));
-    const secondaryMatch = ex.secondaryMuscles.some(m => m.toLowerCase().includes(searchLower));
-
-    if (nameMatch || categoryMatch || primaryMatch) {
+    if (searchKeywords.length === 0) {
+      // No search, show all
       acc.primary.push(ex);
-    } else if (secondaryMatch) {
+      return acc;
+    }
+
+    // Check if ALL keywords match somewhere in the exercise
+    const allKeywordsMatch = searchKeywords.every(keyword => {
+      const nameMatch = ex.name.toLowerCase().includes(keyword);
+      const categoryMatch = ex.category.toLowerCase().includes(keyword);
+      const equipmentMatch = ex.equipment.toLowerCase().includes(keyword);
+      const primaryMatch = ex.primaryMuscles.some(m => m.toLowerCase().includes(keyword));
+      const secondaryMatch = ex.secondaryMuscles.some(m => m.toLowerCase().includes(keyword));
+
+      return nameMatch || categoryMatch || equipmentMatch || primaryMatch || secondaryMatch;
+    });
+
+    if (!allKeywordsMatch) {
+      return acc;
+    }
+
+    // Now determine if it's a primary or secondary match
+    const hasPrimaryMatch = searchKeywords.some(keyword => {
+      const nameMatch = ex.name.toLowerCase().includes(keyword);
+      const categoryMatch = ex.category.toLowerCase().includes(keyword);
+      const primaryMatch = ex.primaryMuscles.some(m => m.toLowerCase().includes(keyword));
+      return nameMatch || categoryMatch || primaryMatch;
+    });
+
+    const hasSecondaryMatch = searchKeywords.some(keyword => {
+      return ex.secondaryMuscles.some(m => m.toLowerCase().includes(keyword));
+    });
+
+    if (hasPrimaryMatch) {
+      acc.primary.push(ex);
+    } else if (hasSecondaryMatch) {
       acc.secondary.push(ex);
     }
 
     return acc;
   }, { primary: [] as Exercise[], secondary: [] as Exercise[] });
+
+  // Smart sorting: Relevance + Popularity (works with multi-keyword search)
+  const calculateRelevanceScore = (exercise: Exercise, keywords: string[]) => {
+    let relevanceScore = 0;
+    const exName = exercise.name.toLowerCase();
+    const exCategory = exercise.category.toLowerCase();
+    const exEquipment = exercise.equipment.toLowerCase();
+
+    // For each keyword, add relevance based on where it matches
+    keywords.forEach(keyword => {
+      // Exact name match gets highest boost
+      if (exName === keyword) {
+        relevanceScore += 1000;
+      } else if (exName.includes(keyword)) {
+        relevanceScore += 100;
+      }
+
+      // Category match
+      if (exCategory === keyword) {
+        relevanceScore += 500;
+      } else if (exCategory.includes(keyword)) {
+        relevanceScore += 50;
+      }
+
+      // Equipment match
+      if (exEquipment === keyword) {
+        relevanceScore += 300;
+      } else if (exEquipment.includes(keyword)) {
+        relevanceScore += 40;
+      }
+
+      // Primary muscles - count how many match
+      const primaryMatchCount = exercise.primaryMuscles.filter(m =>
+        m.toLowerCase().includes(keyword)
+      ).length;
+
+      // More primary muscle matches = more relevant
+      relevanceScore += primaryMatchCount * 200;
+
+      // Boost exercises where searched muscle is the ONLY primary target
+      if (primaryMatchCount > 0 && exercise.primaryMuscles.length === 1) {
+        relevanceScore += 150;
+      }
+    });
+
+    // Bonus: If all keywords appear in the name, it's highly relevant
+    const allKeywordsInName = keywords.every(kw => exName.includes(kw));
+    if (allKeywordsInName && keywords.length > 1) {
+      relevanceScore += 500;
+    }
+
+    // Add popularity rank (scaled down so relevance matters more)
+    relevanceScore += exercise.popularityRank * 0.5;
+
+    return relevanceScore;
+  };
+
+  // Sort primary results by relevance score (higher is better)
+  searchResults.primary.sort((a, b) => {
+    const scoreA = calculateRelevanceScore(a, searchKeywords);
+    const scoreB = calculateRelevanceScore(b, searchKeywords);
+    return scoreB - scoreA;
+  });
+
+  // Sort secondary results by popularity only
+  searchResults.secondary.sort((a, b) => b.popularityRank - a.popularityRank);
 
   const filteredExercises = [...searchResults.primary, ...searchResults.secondary];
   const hasSecondaryResults = searchTerm && searchResults.secondary.length > 0;
