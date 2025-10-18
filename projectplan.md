@@ -290,12 +290,14 @@ The **"Data Scientist's Gym App"** - exceptional analytics, clear progressive ov
    - [x] Implement AI-powered muscle classification (Wing→Lats, Hip→Glutes, etc.) ✅
    - [x] Add movement type classification (compound/isolation/stretch/cardio) ✅
    - [x] Generate template instructions for all exercises ✅
-   - [x] Implement popularity ranking system (1-100 scale) ✅ (needs refinement)
+   - [x] Implement popularity ranking system (1-100 scale) ✅
+   - [x] **Manual ranking refinement with 3-factor scoring (Popularity + Effectiveness → Final Score)** ✅
+   - [x] Integrate 1,146 enhanced exercises into app ✅
+   - [x] Implement multi-keyword search with relevance scoring ✅
+   - [x] Add sort by popularity (integrated into relevance scoring) ✅
    - [ ] **See [exercisesProjectPlan.md](../../exercisesProjectPlan.md) for detailed exercise library expansion tasks**
-   - [ ] Integrate 1,146 enhanced exercises into app
    - [ ] Add category/muscle group filters
    - [ ] Add movement type filters (compound/isolation/stretch)
-   - [ ] Add sort by popularity
    - [ ] Create exercise detail modal (instructions, form cues)
    - [ ] Add custom exercise creation flow
    - [ ] Implement exercise favoriting
@@ -1224,8 +1226,14 @@ _Current Focus: Building workout logging interface and template system_
   - AI-powered muscle classification (fixed Wing→Lats, Hip→Glutes, Leg→Quads/etc.)
   - Movement type classification (compound/isolation/stretch/cardio/mobility)
   - Popularity ranking system (1-100 scale)
+  - Manual ranking refinement (3-factor scoring: Popularity + Effectiveness → Final Score)
   - Template instructions for each exercise
   - 100% classification success rate
+- ✅ **INTEGRATION COMPLETE:** All 1,146 exercises integrated into app with:
+  - Multi-keyword search with AND logic (e.g., "dumbbell back")
+  - Smart relevance scoring (exact matches > partial matches > popularity)
+  - Results grouped by primary vs secondary muscle involvement
+  - Equipment matching in search
+  - Single-target muscle exercises get bonus points
 - ✅ Created [exercisesProjectPlan.md](../../exercisesProjectPlan.md) for tracking exercise library tasks
-- 🟡 Current: Integrating 1,146 enhanced exercises into app
-- 🟡 Next: Update TypeScript interfaces and Exercise Library UI with new features
+- 🟡 Next: Add category/muscle group filters and movement type filters

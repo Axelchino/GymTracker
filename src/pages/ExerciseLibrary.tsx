@@ -8,6 +8,41 @@ export function ExerciseLibrary() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Muscle group aliases - map common nicknames to official names
+  const muscleAliases: Record<string, string[]> = {
+    'traps': ['trapezius'],
+    'delts': ['deltoids', 'shoulders'],
+    'lats': ['latissimus dorsi'],
+    'pecs': ['pectorals', 'chest'],
+    'abs': ['abdominals', 'core'],
+    'quads': ['quadriceps'],
+    'hams': ['hamstrings'],
+    'calves': ['gastrocnemius', 'soleus'],
+    'bis': ['biceps'],
+    'tris': ['triceps'],
+    'glutes': ['gluteus'],
+  };
+
+  // Expand search term with aliases
+  const expandWithAliases = (term: string): string[] => {
+    const lowerTerm = term.toLowerCase();
+    const expansions = [lowerTerm];
+
+    // Check if this term is an alias
+    if (muscleAliases[lowerTerm]) {
+      expansions.push(...muscleAliases[lowerTerm]);
+    }
+
+    // Check if any alias maps to this term
+    Object.entries(muscleAliases).forEach(([alias, targets]) => {
+      if (targets.some(target => target.includes(lowerTerm))) {
+        expansions.push(alias);
+      }
+    });
+
+    return expansions;
+  };
+
   useEffect(() => {
     async function loadExercises() {
       try {
@@ -34,11 +69,18 @@ export function ExerciseLibrary() {
 
     // Check if ALL keywords match somewhere in the exercise
     const allKeywordsMatch = searchKeywords.every(keyword => {
-      const nameMatch = ex.name.toLowerCase().includes(keyword);
-      const categoryMatch = ex.category.toLowerCase().includes(keyword);
-      const equipmentMatch = ex.equipment.toLowerCase().includes(keyword);
-      const primaryMatch = ex.primaryMuscles.some(m => m.toLowerCase().includes(keyword));
-      const secondaryMatch = ex.secondaryMuscles.some(m => m.toLowerCase().includes(keyword));
+      // Expand keyword with aliases
+      const expandedTerms = expandWithAliases(keyword);
+
+      const nameMatch = expandedTerms.some(term => ex.name.toLowerCase().includes(term));
+      const categoryMatch = expandedTerms.some(term => ex.category.toLowerCase().includes(term));
+      const equipmentMatch = expandedTerms.some(term => ex.equipment.toLowerCase().includes(term));
+      const primaryMatch = ex.primaryMuscles.some(m =>
+        expandedTerms.some(term => m.toLowerCase().includes(term))
+      );
+      const secondaryMatch = ex.secondaryMuscles.some(m =>
+        expandedTerms.some(term => m.toLowerCase().includes(term))
+      );
 
       return nameMatch || categoryMatch || equipmentMatch || primaryMatch || secondaryMatch;
     });
@@ -49,14 +91,21 @@ export function ExerciseLibrary() {
 
     // Now determine if it's a primary or secondary match
     const hasPrimaryMatch = searchKeywords.some(keyword => {
-      const nameMatch = ex.name.toLowerCase().includes(keyword);
-      const categoryMatch = ex.category.toLowerCase().includes(keyword);
-      const primaryMatch = ex.primaryMuscles.some(m => m.toLowerCase().includes(keyword));
+      const expandedTerms = expandWithAliases(keyword);
+
+      const nameMatch = expandedTerms.some(term => ex.name.toLowerCase().includes(term));
+      const categoryMatch = expandedTerms.some(term => ex.category.toLowerCase().includes(term));
+      const primaryMatch = ex.primaryMuscles.some(m =>
+        expandedTerms.some(term => m.toLowerCase().includes(term))
+      );
       return nameMatch || categoryMatch || primaryMatch;
     });
 
     const hasSecondaryMatch = searchKeywords.some(keyword => {
-      return ex.secondaryMuscles.some(m => m.toLowerCase().includes(keyword));
+      const expandedTerms = expandWithAliases(keyword);
+      return ex.secondaryMuscles.some(m =>
+        expandedTerms.some(term => m.toLowerCase().includes(term))
+      );
     });
 
     if (hasPrimaryMatch) {
@@ -68,67 +117,10 @@ export function ExerciseLibrary() {
     return acc;
   }, { primary: [] as Exercise[], secondary: [] as Exercise[] });
 
-  // Smart sorting: Relevance + Popularity (works with multi-keyword search)
-  const calculateRelevanceScore = (exercise: Exercise, keywords: string[]) => {
-    let relevanceScore = 0;
-    const exName = exercise.name.toLowerCase();
-    const exCategory = exercise.category.toLowerCase();
-    const exEquipment = exercise.equipment.toLowerCase();
-
-    // For each keyword, add relevance based on where it matches
-    keywords.forEach(keyword => {
-      // Exact name match gets highest boost
-      if (exName === keyword) {
-        relevanceScore += 1000;
-      } else if (exName.includes(keyword)) {
-        relevanceScore += 100;
-      }
-
-      // Category match
-      if (exCategory === keyword) {
-        relevanceScore += 500;
-      } else if (exCategory.includes(keyword)) {
-        relevanceScore += 50;
-      }
-
-      // Equipment match
-      if (exEquipment === keyword) {
-        relevanceScore += 300;
-      } else if (exEquipment.includes(keyword)) {
-        relevanceScore += 40;
-      }
-
-      // Primary muscles - count how many match
-      const primaryMatchCount = exercise.primaryMuscles.filter(m =>
-        m.toLowerCase().includes(keyword)
-      ).length;
-
-      // More primary muscle matches = more relevant
-      relevanceScore += primaryMatchCount * 200;
-
-      // Boost exercises where searched muscle is the ONLY primary target
-      if (primaryMatchCount > 0 && exercise.primaryMuscles.length === 1) {
-        relevanceScore += 150;
-      }
-    });
-
-    // Bonus: If all keywords appear in the name, it's highly relevant
-    const allKeywordsInName = keywords.every(kw => exName.includes(kw));
-    if (allKeywordsInName && keywords.length > 1) {
-      relevanceScore += 500;
-    }
-
-    // Add popularity rank (scaled down so relevance matters more)
-    relevanceScore += exercise.popularityRank * 0.5;
-
-    return relevanceScore;
-  };
-
-  // Sort primary results by relevance score (higher is better)
+  // Sort by popularity rank (your manual rankings)
   searchResults.primary.sort((a, b) => {
-    const scoreA = calculateRelevanceScore(a, searchKeywords);
-    const scoreB = calculateRelevanceScore(b, searchKeywords);
-    return scoreB - scoreA;
+    // Primary sort: popularity rank (higher is better)
+    return b.popularityRank - a.popularityRank;
   });
 
   // Sort secondary results by popularity only
@@ -200,12 +192,25 @@ export function ExerciseLibrary() {
                 <p className="text-sm text-gray-400 mb-2">
                   <span className="text-primary-blue">{exercise.category}</span> • {exercise.equipment}
                 </p>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {exercise.primaryMuscles.map((muscle) => (
-                    <span key={muscle} className="text-xs bg-gray-700 px-2 py-1 rounded text-gray-300">
-                      {muscle}
-                    </span>
-                  ))}
+                <div className="space-y-1 mt-2">
+                  {exercise.primaryMuscles.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {exercise.primaryMuscles.map((muscle) => (
+                        <span key={muscle} className="text-xs bg-primary-blue/20 text-primary-blue px-2 py-1 rounded font-medium">
+                          {muscle}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {exercise.secondaryMuscles.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {exercise.secondaryMuscles.map((muscle) => (
+                        <span key={muscle} className="text-xs bg-gray-700 px-2 py-1 rounded text-gray-400">
+                          {muscle}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -239,12 +244,25 @@ export function ExerciseLibrary() {
                 <p className="text-sm text-gray-400 mb-2">
                   <span className="text-primary-blue">{exercise.category}</span> • {exercise.equipment}
                 </p>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {exercise.secondaryMuscles.map((muscle) => (
-                    <span key={muscle} className="text-xs bg-gray-600 px-2 py-1 rounded text-gray-400">
-                      {muscle}
-                    </span>
-                  ))}
+                <div className="space-y-1 mt-2">
+                  {exercise.primaryMuscles.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {exercise.primaryMuscles.map((muscle) => (
+                        <span key={muscle} className="text-xs bg-primary-blue/20 text-primary-blue px-2 py-1 rounded font-medium">
+                          {muscle}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {exercise.secondaryMuscles.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {exercise.secondaryMuscles.map((muscle) => (
+                        <span key={muscle} className="text-xs bg-gray-700 px-2 py-1 rounded text-gray-400">
+                          {muscle}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
